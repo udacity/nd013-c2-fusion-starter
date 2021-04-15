@@ -76,6 +76,7 @@ association = Association() # init data association
 manager = Trackmanagement() # init track manager
 lidar = None # init lidar sensor object
 camera = None # init camera sensor object
+np.random.seed(10) # make random values predictable
 
 ## Selective execution and visualization
 exec_detection = ['bev_from_pcl', 'detect_objects', 'validate_object_labels', 'measure_detection_performance'] # options are 'bev_from_pcl', 'detect_objects', 'validate_object_labels', 'measure_detection_performance'; options not in the list will be loaded from file
