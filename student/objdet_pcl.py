@@ -30,6 +30,9 @@ from tools.waymo_reader.simple_waymo_open_dataset_reader import dataset_pb2, lab
 # object detection tools and helper functions
 import misc.objdet_tools as tools
 
+# Helper module for data decompression
+import zlib
+
 
 # visualize lidar point-cloud
 def show_pcl(pcl):
@@ -58,18 +61,48 @@ def show_range_image(frame, lidar_name):
     print("student task ID_S1_EX1")
 
     # step 1 : extract lidar data and range image for the roof-mounted lidar
+    lidar = [obj for obj in frame.lasers if obj.name == lidar_name][0]  # get laser data structure from frame
+    ri = []
+    if len(lidar.ri_return1.range_image_compressed) > 0:  # use first response
+        ri = dataset_pb2.MatrixFloat()
+        ri.ParseFromString(zlib.decompress(lidar.ri_return1.range_image_compressed))
+        ri = np.array(ri.data).reshape(ri.shape.dims)
+
+    # Sanity check
+    # print(ri.shape)
 
     # step 2 : extract the range and the intensity channel from the range image
+    range_img = ri[:, :, 0]
+    intensity_img = ri[:, :, 1]
+
+    # Compute the middle columns +/- 90 deg
+    deg_90 = int(range_img.shape[1] / 4)
+    ri_center = int(range_img.shape[1] / 2)
+    range_img = range_img[:, ri_center - deg_90 : ri_center + deg_90]
+    intensity_img = intensity_img[:, ri_center - deg_90 : ri_center + deg_90]
 
     # step 3 : set values <0 to zero
+    range_img[range_img < 0] = 0
+    intensity_img[intensity_img < 0] = 0
 
     # step 4 : map the range channel onto an 8-bit scale and make sure that the full range of values is appropriately considered
+    range_img = range_img / (np.max(range_img) - np.min(range_img)) * 255
 
     # step 5 : map the intensity channel onto an 8-bit scale and normalize with the difference between the 1- and 99-percentile to mitigate the influence of outliers
+    percentiles = np.percentile(intensity_img, [1, 99])
+    range_percentiles = percentiles[1] - percentiles[0]
+    intensity_img = intensity_img / range_percentiles * 255
+    intensity_img[intensity_img > 255] = 255
+
+    # Sanity check
+    # print(f"The min-max of the range image are: {np.min(range_img)}, {np.max(range_img)}")
+    # print(f"The min-max of the intensity image are: {np.min(intensity_img)}, {np.max(intensity_img)}")
 
     # step 6 : stack the range and intensity image vertically using np.vstack and convert the result to an unsigned 8-bit integer
+    img_range_intensity = np.vstack((range_img, intensity_img)).astype(np.uint8)
 
-    img_range_intensity = []  # remove after implementing all steps
+    # Sanity check
+    # print(img_range_intensity.shape)
     #######
     ####### ID_S1_EX1 END #######
 
