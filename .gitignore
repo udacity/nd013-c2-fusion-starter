@@ -1,6 +1,6 @@
-.venv/*
-*results*
-*__pycache__*
+*.venv/*
+*results/*
 *dataset/*
 *misc/*
 *tools/*
+*__pycache__*
