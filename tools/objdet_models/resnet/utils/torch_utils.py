@@ -12,7 +12,7 @@
 import torch
 import torch.distributed as dist
 
-__all__ = ['convert2cpu', 'convert2cpu_long', 'to_cpu', 'reduce_tensor', 'to_python_float', '_sigmoid']
+__all__ = ["convert2cpu", "convert2cpu_long", "to_cpu", "reduce_tensor", "to_python_float", "_sigmoid"]
 
 
 def convert2cpu(gpu_matrix):
@@ -35,7 +35,7 @@ def reduce_tensor(tensor, world_size):
 
 
 def to_python_float(t):
-    if hasattr(t, 'item'):
+    if hasattr(t, "item"):
         return t.item()
     else:
         return t[0]

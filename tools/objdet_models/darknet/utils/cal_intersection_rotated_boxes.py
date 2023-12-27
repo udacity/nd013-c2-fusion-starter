@@ -35,8 +35,9 @@ class Line:
         if not isinstance(other, Line):
             return NotImplemented
         w = self.a * other.b - self.b * other.a
-        return torch.tensor([(self.b * other.c - self.c * other.b) / w, (self.c * other.a - self.a * other.c) / w],
-                            device=self.device)
+        return torch.tensor(
+            [(self.b * other.c - self.c * other.b) / w, (self.c * other.a - self.a * other.c) / w], device=self.device
+        )
 
 
 def intersection_area(rect1, rect2):
@@ -85,7 +86,7 @@ def intersection_area(rect1, rect2):
 
     # Calculate area
     if len(intersection) <= 2:
-        return 0.
+        return 0.0
 
     return PolyArea2D(intersection)
 
@@ -101,7 +102,6 @@ if __name__ == "__main__":
     import numpy as np
     from shapely.geometry import Polygon
 
-
     def cvt_box_2_polygon(box):
         """
         :param array: an array of shape [num_conners, 2]
@@ -110,7 +110,6 @@ if __name__ == "__main__":
         # use .buffer(0) to fix a line polygon
         # more infor: https://stackoverflow.com/questions/13062334/polygon-intersection-error-in-shapely-shapely-geos-topologicalerror-the-opera
         return Polygon([(box[i, 0], box[i, 1]) for i in range(len(box))]).buffer(0)
-
 
     def get_corners_torch(x, y, w, l, yaw):
         device = x.device
@@ -135,7 +134,6 @@ if __name__ == "__main__":
 
         return bev_corners
 
-
     # Show convex in an image
 
     img_size = 300
@@ -157,15 +155,18 @@ if __name__ == "__main__":
     union = box1_area + box2_area - intersection
     iou = intersection / (union + 1e-16)
 
-    print('Shapely- box1_area: {:.2f}, box2_area: {:.2f}, inter: {:.2f}, iou: {:.4f}'.format(box1_area, box2_area,
-                                                                                             intersection, iou))
+    print(
+        "Shapely- box1_area: {:.2f}, box2_area: {:.2f}, inter: {:.2f}, iou: {:.4f}".format(
+            box1_area, box2_area, intersection, iou
+        )
+    )
 
-    print('intersection from intersection_area(): {}'.format(intersection_area(box1_conners, box2_conners)))
+    print("intersection from intersection_area(): {}".format(intersection_area(box1_conners, box2_conners)))
 
     img = cv2.polylines(img, [box1_conners.cpu().numpy().astype(np.int)], True, (255, 0, 0), 2)
     img = cv2.polylines(img, [box2_conners.cpu().numpy().astype(np.int)], True, (0, 255, 0), 2)
 
     while True:
-        cv2.imshow('img', img)
-        if cv2.waitKey(0) & 0xff == 27:
+        cv2.imshow("img", img)
+        if cv2.waitKey(0) & 0xFF == 27:
             break

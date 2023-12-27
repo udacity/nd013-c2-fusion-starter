@@ -17,6 +17,7 @@ import numpy as np
 import torch.nn.functional as F
 import cv2
 
+
 def _nms(heat, kernel=3):
     pad = (kernel - 1) // 2
     hmax = F.max_pool2d(heat, (kernel, kernel), stride=1, padding=pad)
@@ -120,20 +121,24 @@ def post_processing(detections, configs):
         top_preds = {}
         classes = detections[i, :, -1]
         for j in range(configs.num_classes):
-            inds = (classes == j)
+            inds = classes == j
             # x, y, z, h, w, l, yaw
-            top_preds[j] = np.concatenate([
-                detections[i, inds, 0:1],
-                detections[i, inds, 1:2] * configs.down_ratio,
-                detections[i, inds, 2:3] * configs.down_ratio,
-                detections[i, inds, 3:4],
-                detections[i, inds, 4:5],
-                detections[i, inds, 5:6] / (configs.lim_y[1]-configs.lim_y[0]) * configs.bev_width,
-                detections[i, inds, 6:7] / (configs.lim_x[1]-configs.lim_x[0]) * configs.bev_height,
-                get_yaw(detections[i, inds, 7:9]).astype(np.float32)], axis=1)
+            top_preds[j] = np.concatenate(
+                [
+                    detections[i, inds, 0:1],
+                    detections[i, inds, 1:2] * configs.down_ratio,
+                    detections[i, inds, 2:3] * configs.down_ratio,
+                    detections[i, inds, 3:4],
+                    detections[i, inds, 4:5],
+                    detections[i, inds, 5:6] / (configs.lim_y[1] - configs.lim_y[0]) * configs.bev_width,
+                    detections[i, inds, 6:7] / (configs.lim_x[1] - configs.lim_x[0]) * configs.bev_height,
+                    get_yaw(detections[i, inds, 7:9]).astype(np.float32),
+                ],
+                axis=1,
+            )
             # Filter by conf_thresh
             if len(top_preds[j]) > 0:
-                keep_inds = (top_preds[j][:, 0] > configs.conf_thresh)
+                keep_inds = top_preds[j][:, 0] > configs.conf_thresh
                 top_preds[j] = top_preds[j][keep_inds]
         ret.append(top_preds)
 

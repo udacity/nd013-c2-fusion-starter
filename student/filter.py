@@ -16,13 +16,16 @@ import numpy as np
 # add project directory to python path to enable relative imports
 import os
 import sys
-PACKAGE_PARENT = '..'
+
+PACKAGE_PARENT = ".."
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
-import misc.params as params 
+import misc.params as params
+
 
 class Filter:
-    '''Kalman filter class'''
+    """Kalman filter class"""
+
     def __init__(self):
         pass
 
@@ -32,10 +35,10 @@ class Filter:
         ############
 
         return 0
-        
+
         ############
         # END student code
-        ############ 
+        ############
 
     def Q(self):
         ############
@@ -43,10 +46,10 @@ class Filter:
         ############
 
         return 0
-        
+
         ############
         # END student code
-        ############ 
+        ############
 
     def predict(self, track):
         ############
@@ -54,31 +57,31 @@ class Filter:
         ############
 
         pass
-        
+
         ############
         # END student code
-        ############ 
+        ############
 
     def update(self, track, meas):
         ############
         # TODO Step 1: update state x and covariance P with associated measurement, save x and P in track
         ############
-        
+
         ############
         # END student code
-        ############ 
+        ############
         track.update_attributes(meas)
-    
+
     def gamma(self, track, meas):
         ############
         # TODO Step 1: calculate and return residual gamma
         ############
 
         return 0
-        
+
         ############
         # END student code
-        ############ 
+        ############
 
     def S(self, track, meas, H):
         ############
@@ -86,7 +89,7 @@ class Filter:
         ############
 
         return 0
-        
+
         ############
         # END student code
-        ############ 
+        ############

@@ -16,7 +16,7 @@ import torch
 from shapely.geometry import Polygon
 from scipy.spatial import ConvexHull
 
-sys.path.append('../')
+sys.path.append("../")
 
 from utils.cal_intersection_rotated_boxes import intersection_area, PolyArea2D
 
@@ -61,7 +61,7 @@ def get_corners_vectorize(x, y, w, l, yaw):
     return bbox2
 
 
-def get_polygons_areas_fix_xy(boxes, fix_xy=100.):
+def get_polygons_areas_fix_xy(boxes, fix_xy=100.0):
     """
     Args:
         box: (num_boxes, 4) --> w, l, im, re
@@ -111,7 +111,7 @@ def iou_pred_vs_target_boxes(pred_boxes, target_boxes, GIoU=False, DIoU=False, C
     p_areas = p_w * p_l
 
     ious = []
-    giou_loss = torch.tensor([0.], device=device, dtype=torch.float)
+    giou_loss = torch.tensor([0.0], device=device, dtype=torch.float)
     # Thinking to apply vectorization this step
     for box_idx in range(n_boxes):
         p_cons, t_cons = p_conners[box_idx], t_conners[box_idx]
@@ -130,9 +130,9 @@ def iou_pred_vs_target_boxes(pred_boxes, target_boxes, GIoU=False, DIoU=False, C
             hull = ConvexHull(convex_conners.clone().detach().cpu().numpy())  # done on cpu, just need indices output
             convex_conners = convex_conners[hull.vertices]
             convex_area = PolyArea2D(convex_conners)
-            giou_loss += 1. - (iou - (convex_area - union) / (convex_area + 1e-16))
+            giou_loss += 1.0 - (iou - (convex_area - union) / (convex_area + 1e-16))
         else:
-            giou_loss += 1. - iou
+            giou_loss += 1.0 - iou
 
         if DIoU or CIoU:
             raise NotImplementedError
@@ -145,7 +145,6 @@ def iou_pred_vs_target_boxes(pred_boxes, target_boxes, GIoU=False, DIoU=False, C
 if __name__ == "__main__":
     import cv2
     import numpy as np
-
 
     def get_corners_torch(x, y, w, l, yaw):
         device = x.device
@@ -169,7 +168,6 @@ if __name__ == "__main__":
         bev_corners[3, 1] = y + w / 2 * sin_yaw + l / 2 * cos_yaw
 
         return bev_corners
-
 
     # Show convex in an image
 
@@ -197,20 +195,22 @@ if __name__ == "__main__":
     convex_conners = convex_conners[hull.vertices]
     convex_polygon = cvt_box_2_polygon(convex_conners)
     convex_area = convex_polygon.area
-    giou_loss = 1. - (iou - (convex_area - union) / (convex_area + 1e-16))
+    giou_loss = 1.0 - (iou - (convex_area - union) / (convex_area + 1e-16))
 
     print(
-        'box1_area: {:.2f}, box2_area: {:.2f}, intersection: {:.2f}, iou: {:.4f}, convex_area: {:.4f}, giou_loss: {}'.format(
-            box1_area, box2_area, intersection, iou, convex_area, giou_loss))
+        "box1_area: {:.2f}, box2_area: {:.2f}, intersection: {:.2f}, iou: {:.4f}, convex_area: {:.4f}, giou_loss: {}".format(
+            box1_area, box2_area, intersection, iou, convex_area, giou_loss
+        )
+    )
 
-    print('intersection_area: {}'.format(intersection_area(box1_conners, box2_conners)))
-    print('convex_area using PolyArea2D: {}'.format(PolyArea2D(convex_conners)))
+    print("intersection_area: {}".format(intersection_area(box1_conners, box2_conners)))
+    print("convex_area using PolyArea2D: {}".format(PolyArea2D(convex_conners)))
 
     img = cv2.polylines(img, [box1_conners.cpu().numpy().astype(np.int)], True, (255, 0, 0), 2)
     img = cv2.polylines(img, [box2_conners.cpu().numpy().astype(np.int)], True, (0, 255, 0), 2)
     img = cv2.polylines(img, [convex_conners.cpu().numpy().astype(np.int)], True, (0, 0, 255), 2)
 
     while True:
-        cv2.imshow('img', img)
-        if cv2.waitKey(0) & 0xff == 27:
+        cv2.imshow("img", img)
+        if cv2.waitKey(0) & 0xFF == 27:
             break

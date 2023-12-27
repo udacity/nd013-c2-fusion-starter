@@ -26,11 +26,11 @@ import torch.nn.functional as F
 BN_MOMENTUM = 0.1
 
 model_urls = {
-    'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
-    'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
-    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
-    'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
-    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
+    "resnet18": "https://download.pytorch.org/models/resnet18-5c106cde.pth",
+    "resnet34": "https://download.pytorch.org/models/resnet34-333f7ec4.pth",
+    "resnet50": "https://download.pytorch.org/models/resnet50-19c8e357.pth",
+    "resnet101": "https://download.pytorch.org/models/resnet101-5d3b4d8f.pth",
+    "resnet152": "https://download.pytorch.org/models/resnet152-b121ed2d.pth",
 }
 
 
@@ -110,7 +110,6 @@ class Bottleneck(nn.Module):
 
 
 class PoseResNet(nn.Module):
-
     def __init__(self, block, layers, heads, head_conv, **kwargs):
         self.inplanes = 64
         self.deconv_with_bias = False
@@ -138,11 +137,12 @@ class PoseResNet(nn.Module):
                     fc = nn.Sequential(
                         nn.Conv2d(fpn_c, head_conv, kernel_size=3, padding=1, bias=True),
                         nn.ReLU(inplace=True),
-                        nn.Conv2d(head_conv, num_output, kernel_size=1, stride=1, padding=0))
+                        nn.Conv2d(head_conv, num_output, kernel_size=1, stride=1, padding=0),
+                    )
                 else:
                     fc = nn.Conv2d(in_channels=fpn_c, out_channels=num_output, kernel_size=1, stride=1, padding=0)
 
-                self.__setattr__('fpn{}_{}'.format(fpn_idx, head), fc)
+                self.__setattr__("fpn{}_{}".format(fpn_idx, head), fc)
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
@@ -176,17 +176,19 @@ class PoseResNet(nn.Module):
         out_layer4 = self.layer4(out_layer3)
 
         # up_level1: torch.Size([b, 512, 14, 14])
-        up_level1 = F.interpolate(out_layer4, scale_factor=2, mode='bilinear', align_corners=True)
+        up_level1 = F.interpolate(out_layer4, scale_factor=2, mode="bilinear", align_corners=True)
 
         concat_level1 = torch.cat((up_level1, out_layer3), dim=1)
         # up_level2: torch.Size([b, 256, 28, 28])
-        up_level2 = F.interpolate(self.conv_up_level1(concat_level1), scale_factor=2, mode='bilinear',
-                                  align_corners=True)
+        up_level2 = F.interpolate(
+            self.conv_up_level1(concat_level1), scale_factor=2, mode="bilinear", align_corners=True
+        )
 
         concat_level2 = torch.cat((up_level2, out_layer2), dim=1)
         # up_level3: torch.Size([b, 128, 56, 56]),
-        up_level3 = F.interpolate(self.conv_up_level2(concat_level2), scale_factor=2, mode='bilinear',
-                                  align_corners=True)
+        up_level3 = F.interpolate(
+            self.conv_up_level2(concat_level2), scale_factor=2, mode="bilinear", align_corners=True
+        )
         # up_level4: torch.Size([b, 64, 56, 56])
         up_level4 = self.conv_up_level3(torch.cat((up_level3, out_layer1), dim=1))
 
@@ -194,7 +196,7 @@ class PoseResNet(nn.Module):
         for head in self.heads:
             temp_outs = []
             for fpn_idx, fdn_input in enumerate([up_level2, up_level3, up_level4]):
-                fpn_out = self.__getattr__('fpn{}_{}'.format(fpn_idx, head))(fdn_input)
+                fpn_out = self.__getattr__("fpn{}_{}".format(fpn_idx, head))(fdn_input)
                 _, _, fpn_out_h, fpn_out_w = fpn_out.size()
                 # Make sure the added features having same size of heatmap output
                 if (fpn_out_w != hm_w) or (fpn_out_h != hm_h):
@@ -218,30 +220,32 @@ class PoseResNet(nn.Module):
             # TODO: Check initial weights for head later
             for fpn_idx in [0, 1, 2]:  # 3 FPN layers
                 for head in self.heads:
-                    final_layer = self.__getattr__('fpn{}_{}'.format(fpn_idx, head))
+                    final_layer = self.__getattr__("fpn{}_{}".format(fpn_idx, head))
                     for i, m in enumerate(final_layer.modules()):
                         if isinstance(m, nn.Conv2d):
                             # nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
                             # print('=> init {}.weight as normal(0, 0.001)'.format(name))
                             # print('=> init {}.bias as 0'.format(name))
                             if m.weight.shape[0] == self.heads[head]:
-                                if 'hm' in head:
+                                if "hm" in head:
                                     nn.init.constant_(m.bias, -2.19)
                                 else:
                                     nn.init.normal_(m.weight, std=0.001)
                                     nn.init.constant_(m.bias, 0)
             # pretrained_state_dict = torch.load(pretrained)
-            url = model_urls['resnet{}'.format(num_layers)]
+            url = model_urls["resnet{}".format(num_layers)]
             pretrained_state_dict = model_zoo.load_url(url)
-            print('=> loading pretrained model {}'.format(url))
+            print("=> loading pretrained model {}".format(url))
             self.load_state_dict(pretrained_state_dict, strict=False)
 
 
-resnet_spec = {18: (BasicBlock, [2, 2, 2, 2]),
-               34: (BasicBlock, [3, 4, 6, 3]),
-               50: (Bottleneck, [3, 4, 6, 3]),
-               101: (Bottleneck, [3, 4, 23, 3]),
-               152: (Bottleneck, [3, 8, 36, 3])}
+resnet_spec = {
+    18: (BasicBlock, [2, 2, 2, 2]),
+    34: (BasicBlock, [3, 4, 6, 3]),
+    50: (Bottleneck, [3, 4, 6, 3]),
+    101: (Bottleneck, [3, 4, 23, 3]),
+    152: (Bottleneck, [3, 8, 36, 3]),
+}
 
 
 def get_pose_net(num_layers, heads, head_conv, imagenet_pretrained):

@@ -12,7 +12,7 @@
 
 import torch
 
-__all__ = ['convert2cpu', 'convert2cpu_long', 'to_cpu']
+__all__ = ["convert2cpu", "convert2cpu_long", "to_cpu"]
 
 
 def convert2cpu(gpu_matrix):

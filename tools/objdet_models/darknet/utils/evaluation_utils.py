@@ -6,6 +6,7 @@ import torch
 import numpy as np
 from shapely.geometry import Polygon
 
+
 # bev image coordinates format
 def get_corners(x, y, w, l, yaw):
     bev_corners = np.zeros((4, 2), dtype=np.float32)
@@ -28,7 +29,7 @@ def get_corners(x, y, w, l, yaw):
     bev_corners[3, 1] = y + w / 2 * sin_yaw + l / 2 * cos_yaw
 
     return bev_corners
-    
+
 
 def cvt_box_2_polygon(box):
     """
@@ -69,7 +70,7 @@ def load_classes(path):
 
 
 def rescale_boxes(boxes, current_dim, original_shape):
-    """ Rescales bounding boxes to the original shape """
+    """Rescales bounding boxes to the original shape"""
     orig_h, orig_w = original_shape
     # The amount of padding that was added
     pad_x = max(orig_h - orig_w, 0) * (current_dim / max(original_shape))
@@ -87,7 +88,7 @@ def rescale_boxes(boxes, current_dim, original_shape):
 
 
 def ap_per_class(tp, conf, pred_cls, target_cls):
-    """ Compute the average precision, given the recall and precision curves.
+    """Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
     # Arguments
         tp:    True positives (list).
@@ -142,7 +143,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls):
 
 
 def compute_ap(recall, precision):
-    """ Compute the average precision, given the recall and precision curves.
+    """Compute the average precision, given the recall and precision curves.
     Code originally from https://github.com/rbgirshick/py-faster-rcnn.
     # Arguments
         recall:    The recall curve (list).
@@ -169,10 +170,9 @@ def compute_ap(recall, precision):
 
 
 def get_batch_statistics_rotated_bbox(outputs, targets, iou_threshold):
-    """ Compute true positives, predicted scores and predicted labels per sample """
+    """Compute true positives, predicted scores and predicted labels per sample"""
     batch_metrics = []
     for sample_i in range(len(outputs)):
-
         if outputs[sample_i] is None:
             continue
 
@@ -190,7 +190,6 @@ def get_batch_statistics_rotated_bbox(outputs, targets, iou_threshold):
             target_boxes = annotations[:, 1:]
 
             for pred_i, (pred_box, pred_label) in enumerate(zip(pred_boxes, pred_labels)):
-
                 # If targets are found break
                 if len(detected_boxes) == len(annotations):
                     break
@@ -297,12 +296,12 @@ def nms_cpu(boxes, confs, nms_thresh=0.5):
 
 def post_processing(outputs, conf_thresh=0.95, nms_thresh=0.4):
     """
-        Removes detections with lower object confidence score than 'conf_thres' and performs
-        Non-Maximum Suppression to further filter detections.
-        Returns detections with shape:
-            (x, y, w, l, im, re, object_conf, class_score, class_pred)
+    Removes detections with lower object confidence score than 'conf_thres' and performs
+    Non-Maximum Suppression to further filter detections.
+    Returns detections with shape:
+        (x, y, w, l, im, re, object_conf, class_score, class_pred)
     """
-    if type(outputs).__name__ != 'ndarray':
+    if type(outputs).__name__ != "ndarray":
         outputs = outputs.numpy()
     # outputs shape: (batch_size, 22743, 10)
     batch_size = outputs.shape[0]
@@ -328,7 +327,7 @@ def post_processing(outputs, conf_thresh=0.95, nms_thresh=0.4):
 
         keep = nms_cpu(l_box_array, l_max_conf, nms_thresh=nms_thresh)
 
-        if (keep.size > 0):
+        if keep.size > 0:
             l_box_array = l_box_array[keep, :]
             l_obj_confs = l_obj_confs[keep].reshape(-1, 1)
             l_max_conf = l_max_conf[keep].reshape(-1, 1)
@@ -339,10 +338,10 @@ def post_processing(outputs, conf_thresh=0.95, nms_thresh=0.4):
 
 def post_processing_v2(prediction, conf_thresh=0.95, nms_thresh=0.4):
     """
-        Removes detections with lower object confidence score than 'conf_thres' and performs
-        Non-Maximum Suppression to further filter detections.
-        Returns detections with shape:
-            (x, y, w, l, im, re, object_conf, class_score, class_pred)
+    Removes detections with lower object confidence score than 'conf_thres' and performs
+    Non-Maximum Suppression to further filter detections.
+    Returns detections with shape:
+        (x, y, w, l, im, re, object_conf, class_score, class_pred)
     """
     output = [None for _ in range(len(prediction))]
     for image_i, image_pred in enumerate(prediction):
