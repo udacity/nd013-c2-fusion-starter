@@ -33,6 +33,7 @@ import misc.objdet_tools as tools
 # Helper module for data decompression
 import zlib
 import open3d as o3d
+import copy
 
 
 # visualize lidar point-cloud
@@ -124,7 +125,7 @@ def show_range_image(frame, lidar_name):
 # create birds-eye view of lidar data
 def bev_from_pcl(lidar_pcl, configs):
     # remove lidar points outside detection area and with too low reflectivity
-    mask = np.where(
+    mask = np.nonzero(
         (lidar_pcl[:, 0] >= configs.lim_x[0])
         & (lidar_pcl[:, 0] <= configs.lim_x[1])
         & (lidar_pcl[:, 1] >= configs.lim_y[0])
@@ -143,12 +144,26 @@ def bev_from_pcl(lidar_pcl, configs):
     print("student task ID_S2_EX1")
 
     ## step 1 :  compute bev-map discretization by dividing x-range by the bev-image height (see configs)
+    bev_height_res = (configs.lim_x[1] - configs.lim_x[0]) / configs.bev_height
 
-    ## step 2 : create a copy of the lidar pcl and transform all metrix x-coordinates into bev-image coordinates
+    ## step 2 : create a copy of the lidar pcl and transform all matrix x-coordinates into bev-image coordinates
+    lidar_pcl_copy = copy.copy(lidar_pcl)
+    lidar_pcl_copy[:, 0] = np.uint16(lidar_pcl_copy[:, 0] / bev_height_res)
 
     # step 3 : perform the same operation as in step 2 for the y-coordinates but make sure that no negative bev-coordinates occur
+    bev_width_res = (configs.lim_y[1] - configs.lim_y[0]) / configs.bev_width
+    y_offset = (configs.lim_y[1] - configs.lim_y[0]) / 2.0
+    lidar_pcl_copy[:, 1] = np.uint16((lidar_pcl_copy[:, 1] + y_offset) / bev_width_res)
+
+    # Sanity check
+    # print(f"The values of x are {min(lidar_pcl_copy[:,0])} to {max(lidar_pcl_copy[:,0])}")
+    # print(f"The values of y are {min(lidar_pcl_copy[:,1])} to {max(lidar_pcl_copy[:,1])}")
 
     # step 4 : visualize point-cloud using the function show_pcl from a previous task
+    show_pcl(lidar_pcl_copy)
+
+    # Return here is to avoid the program throwing an error an can be removed once the rest is implemented
+    return None
 
     #######
     ####### ID_S2_EX1 END #######
