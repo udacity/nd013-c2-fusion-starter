@@ -147,7 +147,7 @@ def bev_from_pcl(lidar_pcl, configs):
     bev_height_res = (configs.lim_x[1] - configs.lim_x[0]) / configs.bev_height
 
     ## step 2 : create a copy of the lidar pcl and transform all matrix x-coordinates into bev-image coordinates
-    lidar_pcl_cpy = copy.copy(lidar_pcl)
+    lidar_pcl_cpy = lidar_pcl.copy()
     lidar_pcl_cpy[:, 0] = np.uint16(lidar_pcl_cpy[:, 0] / bev_height_res)
 
     # step 3 : perform the same operation as in step 2 for the y-coordinates but make sure that no negative bev-coordinates occur
@@ -170,7 +170,9 @@ def bev_from_pcl(lidar_pcl, configs):
     #######
     print("student task ID_S2_EX2")
 
-    lidar_pcl_top = copy.copy(lidar_pcl_cpy)
+    lidar_pcl_top = lidar_pcl_cpy.copy()
+    lidar_pcl_top[lidar_pcl_top[:, 3] < 0, 3] = 0
+    lidar_pcl_top[lidar_pcl_top[:, 3] > 1.0, 3] = 1.0
 
     ## step 1 : create a numpy array filled with zeros which has the same dimensions as the BEV map
     intensity_map = np.zeros((configs.bev_height + 1, configs.bev_width + 1))
@@ -187,17 +189,13 @@ def bev_from_pcl(lidar_pcl, configs):
     ## step 4 : assign the intensity value of each unique entry in lidar_top_pcl to the intensity map
     ##          make sure that the intensity is scaled in such a way that objects of interest (e.g. vehicles) are clearly visible
     ##          also, make sure that the influence of outliers is mitigated by normalizing intensity on the difference between the max. and min. value within the point cloud
-    intensity_map[np.uint16(lidar_pcl_top[:, 0]), np.uint16(lidar_pcl_top[:, 1])] = lidar_pcl_top[:, 3]
-
-    # Normalize intensity using percentiles 1 and 99
-    percentiles = np.percentile(intensity_map, [1, 99])
-    range_percentiles = percentiles[1] - percentiles[0]
-    intensity_map = intensity_map / range_percentiles * 255
-    intensity_map[intensity_map > 255] = 255
+    intensity_map[np.uint16(lidar_pcl_top[:, 0]), np.uint16(lidar_pcl_top[:, 1])] = lidar_pcl_top[:, 3] / (
+        np.max(lidar_pcl_top[:, 3]) - np.min(lidar_pcl_top[:, 3])
+    )
 
     ## step 5 : temporarily visualize the intensity map using OpenCV to make sure that vehicles separate well from the background
-    # intensity_map = intensity_map.astype(np.uint8)
-    # cv2.imshow("Intensity map", intensity_map)
+    # intensity_map_img = intensity_map.astype(np.uint8) * 256
+    # cv2.imshow("Intensity map", intensity_map_img)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
@@ -218,12 +216,11 @@ def bev_from_pcl(lidar_pcl, configs):
     height_map[np.uint16(lidar_pcl_top[:, 0]), np.uint16(lidar_pcl_top[:, 1])] = lidar_pcl_top[:, 2]
 
     # Normalize height map with min-max height
-    height_map = height_map / float(np.abs(configs.lim_z[1] - configs.lim_z[0])) * 255
-    height_map[height_map > 255] = 255
+    height_map = height_map / float(np.abs(configs.lim_z[1] - configs.lim_z[0]))
 
     ## step 3 : temporarily visualize the intensity map using OpenCV to make sure that vehicles separate well from the background
-    # height_map = height_map.astype(np.uint8)
-    # cv2.imshow("Height map", height_map)
+    # height_map_img = height_map.astype(np.uint8) * 256
+    # cv2.imshow("Height map", height_map_img)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
