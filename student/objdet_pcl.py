@@ -182,14 +182,12 @@ def bev_from_pcl(lidar_pcl, configs):
     ## step 3 : extract all points with identical x and y such that only the top-most z-coordinate is kept (use numpy.unique)
     ##          also, store the number of points per x,y-cell in a variable named "counts" for use in the next task
     _, height_unique_idx, counts = np.unique(lidar_pcl_top[:, 0:2], axis=0, return_index=True, return_counts=True)
-    bev_image_intensity = lidar_pcl_top[height_unique_idx]
+    lidar_pcl_top = lidar_pcl_top[height_unique_idx]
 
     ## step 4 : assign the intensity value of each unique entry in lidar_top_pcl to the intensity map
     ##          make sure that the intensity is scaled in such a way that objects of interest (e.g. vehicles) are clearly visible
     ##          also, make sure that the influence of outliers is mitigated by normalizing intensity on the difference between the max. and min. value within the point cloud
-    intensity_map[np.uint16(bev_image_intensity[:, 0]), np.uint16(bev_image_intensity[:, 1])] = bev_image_intensity[
-        :, 3
-    ]
+    intensity_map[np.uint16(lidar_pcl_top[:, 0]), np.uint16(lidar_pcl_top[:, 1])] = lidar_pcl_top[:, 3]
 
     # Normalize intensity using percentiles 1 and 99
     percentiles = np.percentile(intensity_map, [1, 99])
@@ -212,12 +210,22 @@ def bev_from_pcl(lidar_pcl, configs):
     print("student task ID_S2_EX3")
 
     ## step 1 : create a numpy array filled with zeros which has the same dimensions as the BEV map
+    height_map = np.zeros((configs.bev_height + 1, configs.bev_width + 1))
 
     ## step 2 : assign the height value of each unique entry in lidar_top_pcl to the height map
     ##          make sure that each entry is normalized on the difference between the upper and lower height defined in the config file
     ##          use the lidar_pcl_top data structure from the previous task to access the pixels of the height_map
+    height_map[np.uint16(lidar_pcl_top[:, 0]), np.uint16(lidar_pcl_top[:, 1])] = lidar_pcl_top[:, 2]
+
+    # Normalize height map with min-max height
+    height_map = height_map / float(np.abs(configs.lim_z[1] - configs.lim_z[0])) * 255
+    height_map[height_map > 255] = 255
 
     ## step 3 : temporarily visualize the intensity map using OpenCV to make sure that vehicles separate well from the background
+    height_map = height_map.astype(np.uint8)
+    cv2.imshow("Height map", height_map)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     #######
     ####### ID_S2_EX3 END #######
