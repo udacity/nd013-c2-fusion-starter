@@ -80,7 +80,6 @@ def measure_detection_performance(detections, labels, labels_valid, min_iou=0.5)
                 if iou > min_iou:
                     # print(f"IoU {iou} exceeds threshold {min_iou}")
                     matches_lab_det.append([iou, dist_x, dist_y, dist_z])
-                    true_positives += 1
             #######
             ####### ID_S4_EX1 END #######
 
@@ -91,6 +90,7 @@ def measure_detection_performance(detections, labels, labels_valid, min_iou=0.5)
             )  # retrieve entry with max iou in case of multiple candidates
             ious.append(best_match[0])
             center_devs.append(best_match[1:])
+            true_positives += 1
 
     ####### ID_S4_EX2 START #######
     #######
@@ -99,13 +99,13 @@ def measure_detection_performance(detections, labels, labels_valid, min_iou=0.5)
     # compute positives and negatives for precision/recall
 
     ## step 1 : compute the total number of positives present in the scene
-    all_positives = 0
+    all_positives = len(detections)
 
     ## step 2 : compute the number of false negatives
-    false_negatives = 0
+    false_negatives = labels_valid.sum() - len(ious)
 
     ## step 3 : compute the number of false positives
-    false_positives = 0
+    false_positives = all_positives - len(ious)
 
     #######
     ####### ID_S4_EX2 END #######
