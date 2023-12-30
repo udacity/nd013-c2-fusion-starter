@@ -49,17 +49,38 @@ def measure_detection_performance(detections, labels, labels_valid, min_iou=0.5)
             print("student task ID_S4_EX1 ")
 
             ## step 1 : extract the four corners of the current label bounding-box
+            bbox_corners_label = tools.compute_box_corners(
+                x=label.box.center_x,
+                y=label.box.center_y,
+                w=label.box.width,
+                l=label.box.length,
+                yaw=label.box.heading,
+            )
+            bb_label = Polygon(bbox_corners_label)
 
             ## step 2 : loop over all detected objects
+            for detection in detections:
+                ## step 3 : extract the four corners of the current detection
+                bbox_corners_detection = tools.compute_box_corners(
+                    x=detection[1], y=detection[2], w=detection[5], l=detection[6], yaw=detection[7]
+                )
+                bb_detection = Polygon(bbox_corners_detection)
 
-            ## step 3 : extract the four corners of the current detection
+                ## step 4 : computer the center distance between label and detection bounding-box in x, y, and z
+                dist_x = float(np.sqrt((detection[1] - label.box.center_x) ** 2))
+                dist_y = float(np.sqrt((detection[2] - label.box.center_y) ** 2))
+                dist_z = float(np.sqrt((detection[3] - label.box.center_z) ** 2))
 
-            ## step 4 : computer the center distance between label and detection bounding-box in x, y, and z
+                ## step 5 : compute the intersection over union (IOU) between label and detection bounding-box
+                polygon_intersection = bb_label.intersection(bb_detection).area
+                polygon_union = bb_label.union(bb_detection).area
+                iou = polygon_intersection / polygon_union
 
-            ## step 5 : compute the intersection over union (IOU) between label and detection bounding-box
-
-            ## step 6 : if IOU exceeds min_iou threshold, store [iou,dist_x, dist_y, dist_z] in matches_lab_det and increase the TP count
-
+                ## step 6 : if IOU exceeds min_iou threshold, store [iou,dist_x, dist_y, dist_z] in matches_lab_det and increase the TP count
+                if iou > min_iou:
+                    # print(f"IoU {iou} exceeds threshold {min_iou}")
+                    matches_lab_det.append([iou, dist_x, dist_y, dist_z])
+                    true_positives += 1
             #######
             ####### ID_S4_EX1 END #######
 

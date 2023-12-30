@@ -64,7 +64,7 @@ datafile = WaymoDataFileReader(data_fullpath)
 datafile_iter = iter(datafile)  # initialize dataset iterator
 
 ## Initialize object detection
-configs_det = det.load_configs(model_name="fpn_resnet")  # options are 'darknet', 'fpn_resnet'
+configs_det = det.load_configs(model_name="darknet")  # options are 'darknet', 'fpn_resnet'
 model_det = det.create_model(configs_det)
 
 configs_det.use_labels_as_objects = (
@@ -83,9 +83,9 @@ camera = None  # init camera sensor object
 np.random.seed(10)  # make random values predictable
 
 ## Selective execution and visualization
-exec_detection = ["bev_from_pcl", "detect_objects"]  # options are 'bev_from_pcl', 'detect_objects', 'validate_object_labels', 'measure_detection_performance'; options not in the list will be loaded from file
+exec_detection = ["bev_from_pcl", "detect_objects", "validate_object_labels", "measure_detection_performance"]  # options are 'bev_from_pcl', 'detect_objects', 'validate_object_labels', 'measure_detection_performance'; options not in the list will be loaded from file
 exec_tracking = ["perform_tracking"]  # options are 'perform_tracking'
-exec_visualization = ["show_objects_in_bev_labels_in_camera"]  # options are 'show_range_image', 'show_bev', 'show_pcl', 'show_labels_in_image', 'show_objects_and_labels_in_bev', 'show_objects_in_bev_labels_in_camera', 'show_tracks', 'show_detection_performance', 'make_tracking_movie'
+exec_visualization = ["show_detection_performance"]  # options are 'show_range_image', 'show_bev', 'show_pcl', 'show_labels_in_image', 'show_objects_and_labels_in_bev', 'show_objects_in_bev_labels_in_camera', 'show_tracks', 'show_detection_performance', 'make_tracking_movie'
 exec_list = make_exec_list(exec_detection, exec_tracking, exec_visualization)
 vis_pause_time = 0  # set pause time between frames in ms (0 = stop between frames until key is pressed)
 
@@ -175,9 +175,7 @@ while True:
         ## Performance evaluation for object detection
         if "measure_detection_performance" in exec_list:
             print("measuring detection performance")
-            det_performance = eval.measure_detection_performance(
-                detections, frame.laser_labels, valid_label_flags, configs_det.min_iou
-            )
+            det_performance = eval.measure_detection_performance(detections, frame.laser_labels, valid_label_flags)
         else:
             print("loading detection performance measures from file")
             # load different data for final project vs. mid-term project
