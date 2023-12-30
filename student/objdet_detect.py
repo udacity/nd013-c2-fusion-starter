@@ -236,12 +236,33 @@ def detect_objects(input_bev_maps, model, configs):
     objects = []
 
     ## step 1 : check whether there are any detections
+    if len(detections) == 0:
+        return []
 
     ## step 2 : loop over all detections
+    for detection in detections:
+        ## step 3 : perform the conversion using the limits for x, y and z set in the configs structure
+        id_class, x_img, y_img, z_img, h, w_img, l_img, yaw = detection
 
-    ## step 3 : perform the conversion using the limits for x, y and z set in the configs structure
+        # Convert using bev image and lidar characteristics
+        x = y_img * (configs.lim_x[1] - configs.lim_x[0]) / configs.bev_height
+        y = x_img * (configs.lim_y[1] - configs.lim_y[0]) / configs.bev_width - (configs.lim_y[1] - configs.lim_y[0]) / 2.0
+        z = z_img
+        w = w_img * (configs.lim_y[1] - configs.lim_y[0]) / configs.bev_width
+        l = l_img * (configs.lim_x[1] - configs.lim_x[0]) / configs.bev_height
+        yaw = -1 * yaw # According to instructions
 
-    ## step 4 : append the current object to the 'objects' array
+        # Sanity check
+        # print(f"Id class: {id_class}")
+        # print(f"X: {x}")
+        # print(f"Y: {y}")
+        # print(f"Z: {z}")
+        # print(f"h: {h}")
+        # print(f"w: {w}")
+        # print(f"yaw: {yaw}\n")
+
+        ## step 4 : append the current object to the 'objects' array
+        objects.append([1, x, y, z, h, w, l, yaw])
 
     #######
     ####### ID_S3_EX2 START #######
