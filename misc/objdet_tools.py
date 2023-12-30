@@ -397,19 +397,20 @@ def show_objects_in_bev_labels_in_camera(
     img_rgb = project_labels_into_camera(camera_calibration, image, object_labels, object_labels_valid)
 
     # merge camera image and bev image into a combined view
-    img_rgb_h, img_rgb_w = img_rgb.shape[:2]
-    ratio_rgb = configs.output_width / img_rgb_w
-    output_rgb_h = int(ratio_rgb * img_rgb_h)
-    ret_img_rgb = cv2.resize(img_rgb, (configs.output_width, output_rgb_h))
+    img_rgb_h, _ = img_rgb.shape[:2]
+    ratio_rgb = configs.output_width / img_rgb_h
+    output_rgb_w = int(ratio_rgb * img_rgb_h)
+    ret_img_rgb = cv2.resize(img_rgb, (output_rgb_w, configs.output_width))
 
     img_bev_h, img_bev_w = bev_map.shape[:2]
     ratio_bev = configs.output_width / img_bev_w
     output_bev_h = int(ratio_bev * img_bev_h)
     ret_img_bev = cv2.resize(bev_map, (configs.output_width, output_bev_h))
 
-    out_img = np.zeros((output_rgb_h + output_bev_h, configs.output_width, 3), dtype=np.uint8)
-    out_img[:output_rgb_h, ...] = ret_img_rgb
-    out_img[output_rgb_h:, ...] = ret_img_bev
+    out_img = np.zeros((output_bev_h, configs.output_width*2, 3), dtype=np.uint8)
+    
+    out_img[:, configs.output_width:, ...] = ret_img_bev
+    out_img[:, :configs.output_width, ...] = ret_img_rgb
 
     # show combined view
     cv2.imshow("labels vs. detected objects", out_img)
