@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import torch
 from shapely.geometry import Polygon
 from operator import itemgetter
+from misc.objdet_tools import compute_box_corners
 
 # add project directory to python path to enable relative imports
 import os
@@ -49,17 +50,28 @@ def measure_detection_performance(detections, labels, labels_valid, min_iou=0.5)
             print("student task ID_S4_EX1 ")
 
             ## step 1 : extract the four corners of the current label bounding-box
-            print(detections)
+      
+            bboxtruth = Polygon(compute_box_corners(label.box.center_x,label.box.center_y,label.box.width,label.box.length,label.box.heading))
             ## step 2 : loop over all detected objects
+            for detection in detections:
+                
 
                 ## step 3 : extract the four corners of the current detection
-                
+                bbox_det = Polygon(compute_box_corners(detection[0],detection[2],detection[5],detection[6],detection[7]))
                 ## step 4 : computer the center distance between label and detection bounding-box in x, y, and z
+                dist_x = float(np.sqrt((detection[1]-label.box.center_x)**2))
+                dist_y = float(np.sqrt((detection[1]-label.box.center_x)**2))
+                dist_z = float(np.sqrt((detection[1]-label.box.center_x)**2))
                 
                 ## step 5 : compute the intersection over union (IOU) between label and detection bounding-box
-                
+                isec = bboxtruth.intersection(bbox_det).area
+                union = bboxtruth.union(bbox_det).area
+
+                iou = isec/union
+
                 ## step 6 : if IOU exceeds min_iou threshold, store [iou,dist_x, dist_y, dist_z] in matches_lab_det and increase the TP count
-                
+                if iou > min_iou:
+                    matches_lab_det.append([iou,dist_x,dist_y,dist_z])
             #######
             ####### ID_S4_EX1 END #######     
             
@@ -77,13 +89,13 @@ def measure_detection_performance(detections, labels, labels_valid, min_iou=0.5)
     # compute positives and negatives for precision/recall
     
     ## step 1 : compute the total number of positives present in the scene
-    all_positives = 0
+    all_positives = len(detections)
 
     ## step 2 : compute the number of false negatives
-    false_negatives = 0
+    false_negatives = labels_valid.sum() - len(ious)
 
     ## step 3 : compute the number of false positives
-    false_positives = 0
+    false_positives = all_positives - len(ious)
     
     #######
     ####### ID_S4_EX2 END #######     
@@ -112,11 +124,20 @@ def compute_performance_stats(det_performance_all):
 
     ## step 1 : extract the total number of positives, true positives, false negatives and false positives
     
+
+    TrueP = 0
+    FalseN = 0 
+    FalseP = 0
+    for pos_neg in pos_negs:
+        TrueP += pos_neg[1]
+        FalseN += pos_neg[2]
+        FalseP += pos_neg[3]
+
     ## step 2 : compute precision
-    precision = 0.0
+    precision = TrueP/(TrueP+FalseP)
 
     ## step 3 : compute recall 
-    recall = 0.0
+    recall = TrueP/(TrueP+FalseN)
 
     #######    
     ####### ID_S4_EX3 END #######     

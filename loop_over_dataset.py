@@ -173,10 +173,10 @@ while True:
             # load different data for final project vs. mid-term project
             if 'perform_tracking' in exec_list:
                 det_performance = load_object_from_file(results_fullpath, data_filename, 'det_performance', cnt_frame)
-            #else:
-            #    det_performance = load_object_from_file(results_fullpath, data_filename, 'det_performance_' + configs_det.arch + '_' + str(configs_det.conf_thresh), cnt_frame)   
+            else:
+                det_performance = load_object_from_file(results_fullpath, data_filename, 'det_performance_' + configs_det.arch + '_' + str(configs_det.conf_thresh), cnt_frame)   
 
-        #det_performance_all.append(det_performance) # store all evaluation results in a list for performance assessment at the end
+        det_performance_all.append(det_performance) # store all evaluation results in a list for performance assessment at the end
         
 
         ## Visualization for object detection
@@ -280,7 +280,7 @@ while True:
 
 ## Evaluate object detection performance
 if 'show_detection_performance' in exec_list:
-    eval.compute_performance_stats(det_performance_all, configs_det)
+    eval.compute_performance_stats(det_performance_all)
 
 ## Plot RMSE for all tracks
 if 'show_tracks' in exec_list:
