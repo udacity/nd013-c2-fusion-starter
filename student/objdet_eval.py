@@ -57,11 +57,11 @@ def measure_detection_performance(detections, labels, labels_valid, min_iou=0.5)
                 
 
                 ## step 3 : extract the four corners of the current detection
-                bbox_det = Polygon(compute_box_corners(detection[0],detection[2],detection[5],detection[6],detection[7]))
+                bbox_det = Polygon(compute_box_corners(detection[1],detection[2],detection[5],detection[6],detection[7]))
                 ## step 4 : computer the center distance between label and detection bounding-box in x, y, and z
                 dist_x = float(np.sqrt((detection[1]-label.box.center_x)**2))
-                dist_y = float(np.sqrt((detection[1]-label.box.center_x)**2))
-                dist_z = float(np.sqrt((detection[1]-label.box.center_x)**2))
+                dist_y = float(np.sqrt((detection[1]-label.box.center_y)**2))
+                dist_z = float(np.sqrt((detection[1]-label.box.center_z)**2))
                 
                 ## step 5 : compute the intersection over union (IOU) between label and detection bounding-box
                 isec = bboxtruth.intersection(bbox_det).area
@@ -92,7 +92,7 @@ def measure_detection_performance(detections, labels, labels_valid, min_iou=0.5)
     all_positives = len(detections)
 
     ## step 2 : compute the number of false negatives
-    false_negatives = labels_valid.sum() - len(ious)
+    false_negatives = int(labels_valid.sum() - len(ious))
 
     ## step 3 : compute the number of false positives
     false_positives = all_positives - len(ious)
@@ -100,9 +100,16 @@ def measure_detection_performance(detections, labels, labels_valid, min_iou=0.5)
     #######
     ####### ID_S4_EX2 END #######     
     
+
+
+
     pos_negs = [all_positives, true_positives, false_negatives, false_positives]
     det_performance = [ious, center_devs, pos_negs]
-    
+    # After computing ious, center_devs, pos_neg (inside measure_detection_performance)
+    print("FRAME DEBUG: #labels_valid=", len(labels_valid), " #detections=", len(detections))
+    print(" -> ious:", ious)                # list of IoU's or list-of-lists
+    print(" -> center_devs sample:", center_devs[:3])
+    print(" -> pos_neg:", pos_negs)
     return det_performance
 
 
@@ -133,11 +140,17 @@ def compute_performance_stats(det_performance_all):
         FalseN += pos_neg[2]
         FalseP += pos_neg[3]
 
-    ## step 2 : compute precision
-    precision = TrueP/(TrueP+FalseP)
-
-    ## step 3 : compute recall 
-    recall = TrueP/(TrueP+FalseN)
+    
+    if(TrueP+FalseP == 0):
+        precision = 0
+        recall = 0
+    else:
+        ## step 2 : compute precision
+        precision = TrueP/(TrueP+FalseP)
+        ## step 3 : compute recall 
+        recall = TrueP/(TrueP+FalseN)
+    
+    
 
     #######    
     ####### ID_S4_EX3 END #######     
