@@ -6,6 +6,7 @@ import torch
 import numpy as np
 from shapely.geometry import Polygon
 
+
 # bev image coordinates format
 def get_corners(x, y, w, l, yaw):
     bev_corners = np.zeros((4, 2), dtype=np.float32)
@@ -28,7 +29,7 @@ def get_corners(x, y, w, l, yaw):
     bev_corners[3, 1] = y + w / 2 * sin_yaw + l / 2 * cos_yaw
 
     return bev_corners
-    
+
 
 def cvt_box_2_polygon(box):
     """
@@ -69,7 +70,7 @@ def load_classes(path):
 
 
 def rescale_boxes(boxes, current_dim, original_shape):
-    """ Rescales bounding boxes to the original shape """
+    """Rescales bounding boxes to the original shape"""
     orig_h, orig_w = original_shape
     # The amount of padding that was added
     pad_x = max(orig_h - orig_w, 0) * (current_dim / max(original_shape))
@@ -87,7 +88,7 @@ def rescale_boxes(boxes, current_dim, original_shape):
 
 
 def ap_per_class(tp, conf, pred_cls, target_cls):
-    """ Compute the average precision, given the recall and precision curves.
+    """Compute the average precision, given the recall and precision curves.
     Source: https://github.com/rafaelpadilla/Object-Detection-Metrics.
     # Arguments
         tp:    True positives (list).
@@ -142,7 +143,7 @@ def ap_per_class(tp, conf, pred_cls, target_cls):
 
 
 def compute_ap(recall, precision):
-    """ Compute the average precision, given the recall and precision curves.
+    """Compute the average precision, given the recall and precision curves.
     Code originally from https://github.com/rbgirshick/py-faster-rcnn.
     # Arguments
         recall:    The recall curve (list).
@@ -169,7 +170,7 @@ def compute_ap(recall, precision):
 
 
 def get_batch_statistics_rotated_bbox(outputs, targets, iou_threshold):
-    """ Compute true positives, predicted scores and predicted labels per sample """
+    """Compute true positives, predicted scores and predicted labels per sample"""
     batch_metrics = []
     for sample_i in range(len(outputs)):
 
@@ -189,7 +190,9 @@ def get_batch_statistics_rotated_bbox(outputs, targets, iou_threshold):
             detected_boxes = []
             target_boxes = annotations[:, 1:]
 
-            for pred_i, (pred_box, pred_label) in enumerate(zip(pred_boxes, pred_labels)):
+            for pred_i, (pred_box, pred_label) in enumerate(
+                zip(pred_boxes, pred_labels)
+            ):
 
                 # If targets are found break
                 if len(detected_boxes) == len(annotations):
@@ -199,7 +202,9 @@ def get_batch_statistics_rotated_bbox(outputs, targets, iou_threshold):
                 if pred_label not in target_labels:
                     continue
 
-                iou, box_index = iou_rotated_single_vs_multi_boxes_cpu(pred_box, target_boxes).max(dim=0)
+                iou, box_index = iou_rotated_single_vs_multi_boxes_cpu(
+                    pred_box, target_boxes
+                ).max(dim=0)
 
                 if iou >= iou_threshold and box_index not in detected_boxes:
                     true_positives[pred_i] = 1
@@ -280,7 +285,9 @@ def nms_cpu(boxes, confs, nms_thresh=0.5):
     x, y, w, l, im, re = boxes.transpose(1, 0)
     yaw = np.arctan2(im, re)
     boxes_conners = get_corners_vectorize(x, y, w, l, yaw)
-    boxes_polygons = [cvt_box_2_polygon(box_) for box_ in boxes_conners]  # 4 vertices of the box
+    boxes_polygons = [
+        cvt_box_2_polygon(box_) for box_ in boxes_conners
+    ]  # 4 vertices of the box
     boxes_areas = w * l
 
     keep = []
@@ -297,12 +304,12 @@ def nms_cpu(boxes, confs, nms_thresh=0.5):
 
 def post_processing(outputs, conf_thresh=0.95, nms_thresh=0.4):
     """
-        Removes detections with lower object confidence score than 'conf_thres' and performs
-        Non-Maximum Suppression to further filter detections.
-        Returns detections with shape:
-            (x, y, w, l, im, re, object_conf, class_score, class_pred)
+    Removes detections with lower object confidence score than 'conf_thres' and performs
+    Non-Maximum Suppression to further filter detections.
+    Returns detections with shape:
+        (x, y, w, l, im, re, object_conf, class_score, class_pred)
     """
-    if type(outputs).__name__ != 'ndarray':
+    if type(outputs).__name__ != "ndarray":
         outputs = outputs.numpy()
     # outputs shape: (batch_size, 22743, 10)
     batch_size = outputs.shape[0]
@@ -328,21 +335,23 @@ def post_processing(outputs, conf_thresh=0.95, nms_thresh=0.4):
 
         keep = nms_cpu(l_box_array, l_max_conf, nms_thresh=nms_thresh)
 
-        if (keep.size > 0):
+        if keep.size > 0:
             l_box_array = l_box_array[keep, :]
             l_obj_confs = l_obj_confs[keep].reshape(-1, 1)
             l_max_conf = l_max_conf[keep].reshape(-1, 1)
             l_max_id = l_max_id[keep].reshape(-1, 1)
-            bboxes_batch[i] = np.concatenate((l_box_array, l_obj_confs, l_max_conf, l_max_id), axis=-1)
+            bboxes_batch[i] = np.concatenate(
+                (l_box_array, l_obj_confs, l_max_conf, l_max_id), axis=-1
+            )
     return bboxes_batch
 
 
 def post_processing_v2(prediction, conf_thresh=0.95, nms_thresh=0.4):
     """
-        Removes detections with lower object confidence score than 'conf_thres' and performs
-        Non-Maximum Suppression to further filter detections.
-        Returns detections with shape:
-            (x, y, w, l, im, re, object_conf, class_score, class_pred)
+    Removes detections with lower object confidence score than 'conf_thres' and performs
+    Non-Maximum Suppression to further filter detections.
+    Returns detections with shape:
+        (x, y, w, l, im, re, object_conf, class_score, class_pred)
     """
     output = [None for _ in range(len(prediction))]
     for image_i, image_pred in enumerate(prediction):
@@ -356,18 +365,27 @@ def post_processing_v2(prediction, conf_thresh=0.95, nms_thresh=0.4):
         # Sort by it
         image_pred = image_pred[(-score).argsort()]
         class_confs, class_preds = image_pred[:, 7:].max(dim=1, keepdim=True)
-        detections = torch.cat((image_pred[:, :7].float(), class_confs.float(), class_preds.float()), dim=1)
+        detections = torch.cat(
+            (image_pred[:, :7].float(), class_confs.float(), class_preds.float()), dim=1
+        )
         # Perform non-maximum suppression
         keep_boxes = []
         while detections.size(0):
             # large_overlap = rotated_bbox_iou(detections[0, :6].unsqueeze(0), detections[:, :6], 1.0, False) > nms_thres # not working
-            large_overlap = iou_rotated_single_vs_multi_boxes_cpu(detections[0, :6], detections[:, :6]) > nms_thresh
+            large_overlap = (
+                iou_rotated_single_vs_multi_boxes_cpu(
+                    detections[0, :6], detections[:, :6]
+                )
+                > nms_thresh
+            )
             label_match = detections[0, -1] == detections[:, -1]
             # Indices of boxes with lower confidence scores, large IOUs and matching labels
             invalid = large_overlap & label_match
             weights = detections[invalid, 6:7]
             # Merge overlapping bboxes by order of confidence
-            detections[0, :6] = (weights * detections[invalid, :6]).sum(0) / weights.sum()
+            detections[0, :6] = (weights * detections[invalid, :6]).sum(
+                0
+            ) / weights.sum()
             keep_boxes += [detections[0]]
             detections = detections[~invalid]
         if len(keep_boxes) > 0:
