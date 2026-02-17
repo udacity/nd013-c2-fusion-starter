@@ -62,7 +62,17 @@ class Sensor:
         # otherwise False.
         ############
 
-        return True
+        pos_veh = np.matrix(np.ones((4, 1)))
+        pos_veh[0:3] = x[0:3]
+        pos_sens = self.veh_to_sens * pos_veh  # vehicle -> sensor coordinates
+
+        # check if object is in front of the sensor
+        if pos_sens[0, 0] <= 0:
+            return False
+
+        # check angle against sensor field of view
+        alpha = np.arctan2(pos_sens[1, 0], pos_sens[0, 0])
+        return self.fov[0] < alpha < self.fov[1]
 
         ############
         # END student code
@@ -71,7 +81,7 @@ class Sensor:
     def get_hx(self, x):
         # calculate nonlinear measurement expectation value h(x)
         if self.name == "lidar":
-            pos_veh = np.ones((4, 1))  # homogeneous coordinates
+            pos_veh = np.matrix(np.ones((4, 1)))  # homogeneous coordinates
             pos_veh[0:3] = x[0:3]
             pos_sens = (
                 self.veh_to_sens * pos_veh
@@ -87,7 +97,17 @@ class Sensor:
             # - return h(x)
             ############
 
-            pass
+            pos_veh = np.matrix(np.ones((4, 1)))
+            pos_veh[0:3] = x[0:3]
+            pos_sens = self.veh_to_sens * pos_veh
+
+            if pos_sens[0, 0] == 0:
+                raise NameError("Camera measurement undefined for x=0 in sensor coordinates!")
+
+            hx = np.matrix(np.zeros((2, 1)))
+            hx[0, 0] = self.f_i * (pos_sens[1] / pos_sens[0]) + self.c_i
+            hx[1, 0] = self.f_j * (pos_sens[2] / pos_sens[0]) + self.c_j
+            return hx
 
             ############
             # END student code
@@ -149,9 +169,8 @@ class Sensor:
         # TODO Step 4: remove restriction to lidar in order to include camera as well
         ############
 
-        if self.name == "lidar":
-            meas = Measurement(num_frame, z, self)
-            meas_list.append(meas)
+        meas = Measurement(num_frame, z, self)
+        meas_list.append(meas)
         return meas_list
 
         ############
@@ -174,7 +193,7 @@ class Measurement:
             sigma_lidar_x = params.sigma_lidar_x  # load params
             sigma_lidar_y = params.sigma_lidar_y
             sigma_lidar_z = params.sigma_lidar_z
-            self.z = np.zeros((sensor.dim_meas, 1))  # measurement vector
+            self.z = np.matrix(np.zeros((sensor.dim_meas, 1)))  # measurement vector
             self.z[0] = z[0]
             self.z[1] = z[1]
             self.z[2] = z[2]
@@ -196,7 +215,22 @@ class Measurement:
             # TODO Step 4: initialize camera measurement including z and R
             ############
 
-            pass
+            sigma_cam_i = params.sigma_cam_i  # load params
+            sigma_cam_j = params.sigma_cam_j
+            self.z = np.matrix(np.zeros((sensor.dim_meas, 1)))
+            self.z[0] = z[0]
+            self.z[1] = z[1]
+            self.R = np.matrix(
+                [
+                    [sigma_cam_i**2, 0],
+                    [0, sigma_cam_j**2],
+                ]
+            )
+
+            self.width = None
+            self.length = None
+            self.height = None
+            self.yaw = None
 
             ############
             # END student code

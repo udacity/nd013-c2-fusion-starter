@@ -15,23 +15,23 @@ dim_state = 6  # process model dimension
 
 # Kalman filter parameters (Step 1)
 dt = 0.1  # time increment
-q = 3  # process noise variable for Kalman filter Q
+q = 5.0  # process noise variable for Kalman filter Q
 
 # track management parameters (Step 2)
 confirmed_threshold = (
-    0.8  # track score threshold to switch from 'tentative' to 'confirmed'
+    0.7  # track score threshold to switch from 'tentative' to 'confirmed'
 )
-delete_threshold = 0.6  # track score threshold to delete confirmed tracks
-window = 6  # number of frames for track score calculation
-max_P = 3**2  # delete track if covariance of px or py bigger than this
-sigma_p44 = 50  # initial setting for estimation error covariance P entry for vx
-sigma_p55 = 50  # initial setting for estimation error covariance P entry for vy
+delete_threshold = 0.2  # track score threshold to delete confirmed tracks
+window = 8  # number of frames for track score calculation
+max_P = 16  # delete track if covariance of px or py bigger than this
+sigma_p44 = 30  # initial setting for estimation error covariance P entry for vx
+sigma_p55 = 30  # initial setting for estimation error covariance P entry for vy
 sigma_p66 = 5  # initial setting for estimation error covariance P entry for vz
 weight_dim = 0.1  # sliding average parameter for dimension estimation
 
 # association parameters (Step 3)
 gating_threshold = (
-    0.995  # percentage of correct measurements that shall lie inside gate
+    0.999  # percentage of correct measurements that shall lie inside gate
 )
 
 # measurement parameters (Step 4)

@@ -200,7 +200,11 @@ def plot_tracks(
     # plot measurements
     for meas in meas_list:
         ax.scatter(
-            -1 * meas.z[1], meas.z[0], color="blue", marker=".", label="measurement"
+            -1 * float(meas.z[1]),
+            float(meas.z[0]),
+            color="blue",
+            marker=".",
+            label="measurement",
         )
 
     # maximize window

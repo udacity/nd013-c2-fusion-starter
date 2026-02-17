@@ -42,21 +42,21 @@ class Track:
         # - initialize track state and track score with appropriate values
         ############
 
-        self.x = np.matrix(
-            [[49.53980697], [3.41006279], [0.91790581], [0.0], [0.0], [0.0]]
-        )
-        self.P = np.matrix(
-            [
-                [9.0e-02, 0.0e00, 0.0e00, 0.0e00, 0.0e00, 0.0e00],
-                [0.0e00, 9.0e-02, 0.0e00, 0.0e00, 0.0e00, 0.0e00],
-                [0.0e00, 0.0e00, 6.4e-03, 0.0e00, 0.0e00, 0.0e00],
-                [0.0e00, 0.0e00, 0.0e00, 2.5e03, 0.0e00, 0.0e00],
-                [0.0e00, 0.0e00, 0.0e00, 0.0e00, 2.5e03, 0.0e00],
-                [0.0e00, 0.0e00, 0.0e00, 0.0e00, 0.0e00, 2.5e01],
-            ]
-        )
-        self.state = "confirmed"
-        self.score = 0
+        pos_sens = np.matrix(np.ones((4, 1)))
+        pos_sens[0:3] = meas.z[0:3]
+        pos_veh = meas.sensor.sens_to_veh * pos_sens
+
+        self.x = np.matrix(np.zeros((params.dim_state, 1)))
+        self.x[0:3] = pos_veh[0:3]
+
+        self.P = np.matrix(np.zeros((params.dim_state, params.dim_state)))
+        self.P[0:3, 0:3] = M_rot * meas.R * M_rot.transpose()
+        self.P[3, 3] = params.sigma_p44**2
+        self.P[4, 4] = params.sigma_p55**2
+        self.P[5, 5] = params.sigma_p66**2
+
+        self.state = "initialized"
+        self.score = 1.0 / params.window
 
         ############
         # END student code
@@ -73,7 +73,7 @@ class Track:
         self.t = meas.t
 
     def set_x(self, x):
-        self.x = x
+        self.x=x
 
     def set_P(self, P):
         self.P = P
@@ -114,16 +114,30 @@ class Trackmanagement:
         # feel free to define your own parameters)
         ############
 
-        # decrease score for unassigned tracks
+        # Decrease score for unassigned tracks only during lidar association pass.
+        # This avoids penalizing freshly initialized lidar tracks during camera pass.
+        is_lidar_pass = bool(meas_list) and meas_list[0].sensor.name == "lidar"
         for i in unassigned_tracks:
             track = self.track_list[i]
             # check visibility
-            if meas_list:  # if not empty
+            if is_lidar_pass:
                 if meas_list[0].sensor.in_fov(track.x):
-                    # your code goes here
-                    pass
+                    track.score -= 1.0 / params.window
+                    track.score = max(track.score, 0.0)
 
         # delete old tracks
+        tracks_to_delete = []
+        for track in self.track_list:
+            if track.P[0, 0] > params.max_P or track.P[1, 1] > params.max_P:
+                tracks_to_delete.append(track)
+                continue
+            if track.state == "confirmed" and track.score < params.delete_threshold:
+                tracks_to_delete.append(track)
+            elif track.state in ["tentative", "initialized"] and track.score <= 0:
+                tracks_to_delete.append(track)
+
+        for track in tracks_to_delete:
+            self.delete_track(track)
 
         ############
         # END student code
@@ -155,8 +169,13 @@ class Trackmanagement:
         # - increase track score
         # - set track state to 'tentative' or 'confirmed'
         ############
-
-        pass
+    
+        track.score += 1.0 / params.window
+        track.score = min(track.score, 1.0)
+        if track.score >= params.confirmed_threshold:
+            track.state = "confirmed"
+        else:
+            track.state = "tentative"
 
         ############
         # END student code
