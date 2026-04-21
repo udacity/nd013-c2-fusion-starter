@@ -38,7 +38,7 @@ def plot_tracks(fig, ax, ax2, track_list, meas_list, lidar_labels, lidar_labels_
     # plot image
     ax.cla()
     ax2.cla()
-    ax2.imshow(image)
+    ax2.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
     
     # plot tracks, measurements and ground truth in birds-eye view
     for track in track_list:
